@@ -193,7 +193,7 @@
 <script>
 /* ========== CONFIG ========== */
 /* Replace with your deployed Apps Script web app /exec URL */
-const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyjCaQtRhPn3noyKXYx_RiAgl--EFfmzrIdzWV71LAyKMF069JqQVRo9B8kiHXa4zsy/exec';
+const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyavDr1MCR5L2D4v7MN3njDAc01OoANv7PCZL023H7i5VzuauptE746RgVUmOWCk291eA/exec';
 /* ============================ */
 
 const $ = id => document.getElementById(id);
@@ -428,41 +428,51 @@ function validateBeforeSubmit(){
 
 /* submit */
 async function submitAttendance(){
-  if(!validateBeforeSubmit()){ setStatus('Please correct highlighted fields', false); return; }
-  const payload = {
-    empId: $('empSelect').value,
-    mode: $('mode').value || 'IN',
-    note: $('note').value || '',
-    source: 'WEBAPP',
-    deviceId: navigator.userAgent || '',
-    deviceEmail: $('signInID').value || '',
-    cameraLabel: $('cameraSelect').options[$('cameraSelect').selectedIndex]?.text || '',
-    photo: $('thumbWrap').dataset.photo || ''
-  };
+  if(!validateBeforeSubmit()){
+    setStatus('Please correct highlighted fields', false);
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('empId', $('empSelect').value);
+  formData.append('mode', $('mode').value || 'IN');
+  formData.append('note', $('note').value || '');
+  formData.append('source', 'WEBAPP');
+  formData.append('deviceId', navigator.userAgent || '');
+  formData.append('deviceEmail', $('signInID').value || '');
+  formData.append('cameraLabel', $('cameraSelect').options[$('cameraSelect').selectedIndex]?.text || '');
+  formData.append('photo', $('thumbWrap').dataset.photo || '');
 
   setStatus('Submitting...', null);
   $('submitBtn').disabled = true;
-  try{
+
+  try {
     const res = await fetch(GAS_WEBAPP_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: formData   // 👈 IMPORTANT
     });
-    const j = await res.json();
-    if(j && j.status === 'ok'){
-      setStatus('Attendance submitted ✓ ' + (new Date()).toLocaleString(), true);
-      $('note').value = ''; $('thumbWrap').innerHTML = ''; delete $('thumbWrap').dataset.photo;
+
+    const text = await res.text();
+    const j = JSON.parse(text);
+
+    if(j.status === 'ok'){
+      setStatus('Attendance submitted ✓ ' + new Date().toLocaleString(), true);
+      $('note').value = '';
+      $('thumbWrap').innerHTML = '';
+      delete $('thumbWrap').dataset.photo;
       $('retakeBtn').style.display = 'none';
     } else {
-      setStatus('Server error: ' + (j && j.message ? j.message : 'unknown'), false);
+      setStatus('Server error: ' + (j.message || 'unknown'), false);
     }
+
   } catch(err){
-    console.error('submitAttendance error', err);
+    console.error(err);
     setStatus('Network error while submitting', false);
   } finally {
     $('submitBtn').disabled = false;
   }
 }
+
 
 /* utilities */
 function clearForm(){
@@ -534,4 +544,3 @@ document.addEventListener('DOMContentLoaded', async ()=> {
 </script>
 </body>
 </html>
-
