@@ -446,37 +446,26 @@ async function submitAttendance(){
   setStatus('Submitting...', null);
   $('submitBtn').disabled = true;
 
-try {
-  const res = await fetch(GAS_WEBAPP_URL, {
-    method: 'POST',
-    body: formData
-  });
+  try {
+    const res = await fetch(GAS_WEBAPP_URL, {
+      method: 'POST',
+      body: formData   // 👈 IMPORTANT
+    });
 
-  const j = await res.json().catch(() => ({ status: 'ok' }));
+    const text = await res.text();
+    const j = JSON.parse(text);
 
-  if(j.status === 'ok'){
-    setStatus('Attendance submitted ✓ ' + new Date().toLocaleString(), true);
-    $('note').value = '';
-    $('thumbWrap').innerHTML = '';
-    delete $('thumbWrap').dataset.photo;
-    $('retakeBtn').style.display = 'none';
-  } else {
-    setStatus('Server error: ' + (j.message || 'unknown'), false);
+    if(j.status === 'ok'){
+      setStatus('Attendance submitted ✓ ' + new Date().toLocaleString(), true);
+      $('note').value = '';
+      $('thumbWrap').innerHTML = '';
+      delete $('thumbWrap').dataset.photo;
+      $('retakeBtn').style.display = 'none';
+    } else {
+      setStatus('Server error: ' + (j.message || 'unknown'), false);
+    }
+
   }
-
-} catch(err){
-  console.error(err);
-  setStatus('Network error while submitting', false);
-}
-
-
-  } catch(err){
-    console.error(err);
-    setStatus('Network error while submitting', false);
-  } finally {
-    $('submitBtn').disabled = false;
-  }
-}
 
 
 /* utilities */
@@ -549,4 +538,3 @@ document.addEventListener('DOMContentLoaded', async ()=> {
 </script>
 </body>
 </html>
-
