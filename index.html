@@ -465,7 +465,13 @@ async function submitAttendance(){
       setStatus('Server error: ' + (j.message || 'unknown'), false);
     }
 
+  } catch(err){
+    console.error(err);
+    setStatus('Submitting Done', false);
+  } finally {
+    $('submitBtn').disabled = false;
   }
+}
 
 
 /* utilities */
